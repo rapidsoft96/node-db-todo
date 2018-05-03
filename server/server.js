@@ -1,6 +1,7 @@
 //library imports
-var express=require('express');
-var bodyParser=require('body-parser');
+const _=require('lodash');
+const express=require('express');
+const bodyParser=require('body-parser');
 const {ObjectID}=require('mongodb');
 
 //local imports
@@ -69,6 +70,34 @@ app.delete('/todos/:id',(req,res)=>{
     else{
       res.status(404).send();
     }
+  }).catch((e)=>{
+    res.status(400).send();
+  });
+});
+
+//UPDATE route
+app.patch('/todos/:id',(req,res)=>{
+  var id=req.params.id;
+  var body = _.pick(req.body,['text','completed']); //properties that user can update ,method pick()
+  if (!ObjectID.isValid(id)){
+    res.status(404).send({});
+  }
+
+  //checking the completed value , and setting variable completedAt
+  if(_.isBoolean(body.completed) && body.completed){
+    body.completedAt=new Date().getTime() // return javascript time stamp
+  } else{
+    body.completed=false;
+    body.completedAt=null;
+  }
+//making query to update db
+  Todo.findByIdAndUpdate(id,{$set:body}, {new: true}).then((todo)=>{
+    if(!todo){
+      return res.status(404).send();
+    }
+
+    res.send({todo});
+    
   }).catch((e)=>{
     res.status(400).send();
   });
